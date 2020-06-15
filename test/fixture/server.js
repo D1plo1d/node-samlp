@@ -69,6 +69,42 @@ module.exports.start = function(options, callback){
     });
   });
 
+    app.get('/samlpAsyncSigning', function(req, res, next) {
+    samlp.auth(xtend({}, {
+      issuer:             'urn:fixture-test',
+      getPostURL:         getPostURL,
+      cert:               credentials.cert,
+      key:                credentials.key,
+      signatureFunction:    function RSASHA256() {
+        this.getSignature = function(signedInfo, signingKey, callback) {
+          var signer = crypto.createSign("RSA-SHA256")
+          signer.update(signedInfo)
+          var res = signer.sign(signingKey, 'base64')
+          //or do async signing from key server or Hardware Security Module (HSM)
+          callback(null, res)
+        }
+
+        this.verifySignature = function(str, key, signatureValue, callback) {
+          var verifier = crypto.createVerify("RSA-SHA256")
+          verifier.update(str)
+          var res = verifier.verify(key, signatureValue, 'base64')
+          //verify async as well
+          if (callback) callback(null, res)
+          else return res //xmlhelper.js doesn't use callbacks
+        }
+
+        this.getAlgorithmName = function() {
+          return "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
+        }
+      }
+    }, module.exports.options))(req, res, function(err){
+      if (err) {
+        return res.send(400, err.message);
+      } 
+      next();
+    });
+  });
+
   app.get('/samlp/FederationMetadata/2007-06/FederationMetadata.xml', samlp.metadata({
     issuer:           'urn:fixture-test',
     cert:             credentials.cert,
