@@ -6,6 +6,7 @@ var samlp = require('../../lib');
 var xtend = require('xtend');
 var fs = require('fs');
 var path = require('path');
+var crypto = require('crypto');
 
 var fakeUser = {
   id: 12345678,
@@ -40,15 +41,11 @@ module.exports.start = function(options, callback){
   var app = express();
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(express.json());
-
-  app.configure(function(){
-    this.use(function(req,res,next){
-      req.user = fakeUser;
-      next();
-    });
-
-    this.use(expressSession({secret:'somesecrettokenhere'}));
+  app.use(function(req,res,next){
+    req.user = fakeUser;
+    next();
   });
+  app.use(expressSession({secret:'somesecrettokenhere'}));
 
   function getPostURL (wtrealm, wreply, req, callback) {
     callback(null, 'http://office.google.com');
@@ -62,9 +59,10 @@ module.exports.start = function(options, callback){
       cert:               credentials.cert,
       key:                credentials.key
     }, module.exports.options))(req, res, function(err){
-      if (err) {
-        return res.send(400, err.message);
-      } 
+      console.log({ err })
+      // if (err) {
+      //   return res.send(400, err.message);
+      // }
       next();
     });
   });
@@ -77,6 +75,7 @@ module.exports.start = function(options, callback){
       key:                credentials.key,
       signatureFunction:    function RSASHA256() {
         this.getSignature = function(signedInfo, signingKey, callback) {
+          console.log({signedInfo, signingKey, callback})
           var signer = crypto.createSign("RSA-SHA256")
           signer.update(signedInfo)
           var res = signer.sign(signingKey, 'base64')
@@ -100,7 +99,7 @@ module.exports.start = function(options, callback){
     }, module.exports.options))(req, res, function(err){
       if (err) {
         return res.send(400, err.message);
-      } 
+      }
       next();
     });
   });
@@ -122,7 +121,7 @@ module.exports.start = function(options, callback){
     }, module.exports.options))(req, res, function (err) {
       if (err) {
         return res.send(400, err.message);
-      } 
+      }
       next();
     });
   });
@@ -136,7 +135,7 @@ module.exports.start = function(options, callback){
     }, module.exports.options))(req, res, function (err) {
       if (err) {
         return res.send(400, err.message);
-      } 
+      }
       next();
     });
   });

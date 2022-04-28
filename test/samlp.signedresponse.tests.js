@@ -3,7 +3,7 @@ var server = require('./fixture/server');
 var request = require('request');
 var cheerio = require('cheerio');
 var xmlhelper = require('./xmlhelper');
-var xmldom = require('xmldom');
+var xmldom = require('@auth0/xmldom');
 
 describe('samlp signed response', function () {
   before(function (done) {
@@ -63,7 +63,7 @@ describe('samlp signed response', function () {
       expect(signature[0].previousSibling.nodeName).to.equal('saml:Issuer');
     });
 	});
-	
+
 	  describe('Async XML signing SAMLRequest on querystring', function () {
     var body, $, signedResponse, attributes;
 
@@ -76,6 +76,9 @@ describe('samlp signed response', function () {
         body = b;
         $ = cheerio.load(body);
         var SAMLResponse = $('input[name="SAMLResponse"]').attr('value');
+        if (SAMLResponse == null) {
+          done(new Error('Invalid response received from samlpAsyncSigning: ' + body))
+        }
         var decoded = new Buffer(SAMLResponse, 'base64').toString();
         signedResponse = /(<samlp:Response.*<\/samlp:Response>)/.exec(decoded)[1];
         done();
