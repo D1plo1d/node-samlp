@@ -59,10 +59,9 @@ module.exports.start = function(options, callback){
       cert:               credentials.cert,
       key:                credentials.key
     }, module.exports.options))(req, res, function(err){
-      console.log({ err })
-      // if (err) {
-      //   return res.send(400, err.message);
-      // }
+      if (err) {
+        return res.send(400, err.message);
+      }
       next();
     });
   });
@@ -75,7 +74,6 @@ module.exports.start = function(options, callback){
       key:                credentials.key,
       signatureFunction:    function RSASHA256() {
         this.getSignature = function(signedInfo, signingKey, callback) {
-          console.log({signedInfo, signingKey, callback})
           var signer = crypto.createSign("RSA-SHA256")
           signer.update(signedInfo)
           var res = signer.sign(signingKey, 'base64')
